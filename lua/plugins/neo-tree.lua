@@ -10,20 +10,24 @@ return {
 		},
 
 		keys = {
-			{ "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Neo-tree toggle" },
+			{ "<leader>E", "<cmd>Neotree toggle position=float <cr>", desc = "Neo-tree toggle (float)" },
+			{ "<leader>e", "<cmd>Neotree toggle position=left <cr>",  desc = "Neo-tree toggle (left)" },
 		},
 
 		init = function()
-			vim.api.nvim_set_hl(0, "NeoTreeDirectoryIcon", { fg = "#94907D" })
+			vim.api.nvim_create_autocmd("ColorScheme", {
+				callback = function()
+					vim.api.nvim_set_hl(0, "NeoTreeDirectoryIcon", { fg = "#94907D", force = true })
+					vim.api.nvim_set_hl(0, "NeoTreeDirectoryName", { fg = "#4E907D", force = true })
+				end,
+			})
 		end,
-
 		opts = {
 			enable_git_status = true,
 			highlight_git_status = true,
 
 			window = {
 				width = 30,
-				position = "left",
 				mappings = {
 					["S"]  = "git_add_all",
 					["gu"] = "git_unstage_file",
@@ -66,7 +70,6 @@ return {
 		config = function(_, opts)
 			vim.api.nvim_set_hl(0, "NeoTreeFileName", { fg = "#94907D" })
 			vim.api.nvim_set_hl(0, "NeoTreeRootName", { fg = "#75715E", bold = true })
-			vim.api.nvim_set_hl(0, "NeoTreeDirectoryName", { fg = "#4E907D" })
 			require("neo-tree").setup(opts) -- ✅ one setup call, no return
 		end,
 	},
