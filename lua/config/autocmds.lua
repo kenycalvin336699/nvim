@@ -1,6 +1,13 @@
 -- Fix jupytext.nvim erroring on empty or invalid .ipynb files
 -- (it json.decodes the raw content). Populate a minimal valid
 -- notebook before jupytext's BufReadCmd runs.
+vim.api.nvim_create_autocmd("ColorScheme", {
+	callback = function()
+		vim.api.nvim_set_hl(0, "LineNr", { fg = "#FF8C00" })
+		vim.api.nvim_set_hl(0, "LineNrAbove", { fg = "#2E8B57" })
+		vim.api.nvim_set_hl(0, "LineNrBelow", { fg = "#2AA198" })
+	end,
+})
 vim.api.nvim_create_autocmd("BufReadPre", {
 	pattern = "*.ipynb",
 	callback = function(args)

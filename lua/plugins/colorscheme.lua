@@ -41,6 +41,9 @@ return {
 		"rebelot/kanagawa.nvim",
 		lazy = false,
 		priority = 1000,
+		keys = {
+			{ "<leader>kd", "<cmd>colorscheme kanagawa-dragon<cr>", desc = "Colorscheme: kanagawa-dragon" },
+		},
 		config = function()
 			require("kanagawa").setup({
 				theme = "wave", -- wave, dragon, lotus
