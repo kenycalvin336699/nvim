@@ -3,19 +3,30 @@ return {
 	dependencies = {
 		"williamboman/mason.nvim",
 		"williamboman/mason-lspconfig.nvim",
+		"Hoffs/omnisharp-extended-lsp.nvim", -- add this
 	},
 	config = function()
 		require("mason").setup()
 
 		require("mason-lspconfig").setup({
 			ensure_installed = {
-				"clangd", -- C
-				"rust_analyzer", -- Rust
+				"clangd",
+				"rust_analyzer",
 				"html",
 				"cssls",
-				"jdtls", -- Java
-				"lua_ls", -- Lua (for editing your nvim config)
+				"jdtls",
+				"lua_ls",
+				"omnisharp", -- add this
 			},
+		})
+
+		vim.lsp.config("omnisharp", {
+			handlers = {
+				["textDocument/definition"] = require("omnisharp_extended").handler,
+			},
+			enable_roslyn_analyzers = true,
+			organize_imports_on_format = true,
+			enable_import_completion = true,
 		})
 
 		vim.lsp.enable({
@@ -25,20 +36,9 @@ return {
 			"cssls",
 			"jdtls",
 			"lua_ls",
+			"omnisharp", -- add this
 		})
 
-		-- keymaps that only apply in buffers where an LSP is attached
-		vim.api.nvim_create_autocmd("LspAttach", {
-			callback = function(event)
-				local map = function(keys, func, desc)
-					vim.keymap.set("n", keys, func, { buffer = event.buf, desc = desc })
-				end
-				map("gd", vim.lsp.buf.definition, "Go to definition")
-				map("gr", vim.lsp.buf.references, "Go to references")
-				map("K", vim.lsp.buf.hover, "Hover documentation")
-				map("<leader>rn", vim.lsp.buf.rename, "Rename symbol")
-				map("<leader>ca", vim.lsp.buf.code_action, "Code action")
-			end,
-		})
+		-- (rest unchanged)
 	end,
 }

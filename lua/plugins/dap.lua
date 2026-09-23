@@ -36,16 +36,36 @@ return {
       vim.fn.sign_define("DapStopped", { text = "▶", texthl = "DapStopped", linehl = "DapStoppedLine" })
 
       -- ===== C / C++ / Rust via codelldb =====
-      local codelldb_path = vim.fn.stdpath("data") .. "/mason/bin/codelldb"
-      dap.adapters.codelldb = {
-        type = "server",
-        port = "${port}",
-        executable = {
-          command = codelldb_path,
-          args = { "--port", "${port}" },
-        },
-      }
+	  local codelldb_path = vim.fn.stdpath("data") .. "/mason/bin/codelldb"
 
+	  dap.adapters.codelldb = function(callback, config)
+  		  local port = 13000 + math.random(0, 500) -- avoid clashing with a leftover process
+  		  local stdout = vim.loop.new_pipe(false)
+  		  local handle
+
+  		  handle = vim.loop.spawn(codelldb_path, {
+    		  args = { "--port", tostring(port) },
+    		  stdio = { nil, stdout, nil },
+    		  detached = true,
+  		  }, function(code)
+    		  stdout:close()
+    		  if handle then handle:close() end
+  		  end)
+
+  		  stdout:read_start(function(err, chunk)
+    		  assert(not err, err)
+    		  if chunk then
+      			  vim.schedule(function()
+        			  require("dap.repl").append(chunk)
+      			  end)
+    		  end
+  		  end)
+
+  -- give codelldb time to actually bind the port before nvim-dap connects
+  vim.defer_fn(function()
+    callback({ type = "server", host = "127.0.0.1", port = port })
+  end, 400)
+end
       local cpp_rust_config = {
         {
           name = "Launch",
@@ -80,16 +100,37 @@ return {
           stopAtBeginningOfMainSubprogram = true,
         },
       }
+
+      -- ===== C# / Unity via netcoredbg =====
+      dap.adapters.coreclr = {
+        type = "executable",
+        command = "/usr/bin/netcoredbg", -- confirm path: `which netcoredbg`
+        args = { "--interpreter=vscode" },
+      }
+      dap.configurations.cs = {
+        {
+          type = "coreclr",
+          name = "Attach to Unity",
+          request = "attach",
+          processId = require("dap.utils").pick_process,
+        },
+      }
     end,
   },
 
-  {
-    "jay-babu/mason-nvim-dap.nvim",
-    dependencies = { "mason.nvim", "mfussenegger/nvim-dap" },
-    opts = {
-      handlers = {},
-      ensure_installed = { "codelldb" }, -- gdb you install via your distro's package manager
-      automatic_installation = true,
-    },
-  },
+	 {
+	  "jay-babu/mason-nvim-dap.nvim",
+	  dependencies = { "mason.nvim", "mfussenegger/nvim-dap" },
+	  opts = {
+	    ensure_installed = { "codelldb", "netcoredbg" },
+	    automatic_installation = true,
+	    handlers = {
+	      -- disable the default handler for codelldb specifically —
+	      -- we register the adapter and configurations ourselves in
+	      -- the nvim-dap config() function above, to avoid the
+	      -- port-race issue in mason-nvim-dap's built-in adapter.
+	      codelldb = function() end,
+	    },
+	  },
+	},
 }

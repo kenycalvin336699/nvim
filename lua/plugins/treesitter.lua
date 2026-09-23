@@ -5,7 +5,8 @@ return {
     require("nvim-treesitter").setup({
       ensure_installed = {
         "c", "rust", "asm", "html", "css", "java",
-        "lua", -- for editing your own nvim config
+        "c_sharp", -- add this
+        "lua",
       },
       highlight = { enable = true },
       indent = { enable = true },
