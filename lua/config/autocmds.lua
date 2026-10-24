@@ -1,39 +1,32 @@
--- Fix jupytext.nvim erroring on empty or invalid .ipynb files
--- (it json.decodes the raw content). Populate a minimal valid
--- notebook before jupytext's BufReadCmd runs.
+local group = vim.api.nvim_create_augroup("user-autocmds", { clear = true })
+
+-- Custom line-number colours, re-applied after every colorscheme change
 vim.api.nvim_create_autocmd("ColorScheme", {
-	callback = function()
-		vim.api.nvim_set_hl(0, "LineNr", { fg = "#FF8C00" })
-		vim.api.nvim_set_hl(0, "LineNrAbove", { fg = "#2E8B57" })
-		vim.api.nvim_set_hl(0, "LineNrBelow", { fg = "#2AA198" })
-	end,
+  group = group,
+  callback = function()
+    vim.api.nvim_set_hl(0, "LineNr", { fg = "#FF8C00" })
+    vim.api.nvim_set_hl(0, "LineNrAbove", { fg = "#2E8B57" })
+    vim.api.nvim_set_hl(0, "LineNrBelow", { fg = "#2AA198" })
+  end,
 })
+
+-- jupytext.nvim errors on empty/invalid .ipynb files (it json.decodes the raw
+-- content), so write a minimal valid notebook before its BufReadCmd runs.
 vim.api.nvim_create_autocmd("BufReadPre", {
-	pattern = "*.ipynb",
-	callback = function(args)
-		local path = args.match
-		local f = io.open(path, "r")
-		if not f then
-			return
-		end
-		local content = f:read("*a")
-		f:close()
+  group = group,
+  pattern = "*.ipynb",
+  callback = function(args)
+    local f = io.open(args.match, "r")
+    if not f then return end
+    local content = f:read("*a")
+    f:close()
 
-		local ok = content ~= "" and pcall(vim.json.decode, content)
+    if content ~= "" and pcall(vim.json.decode, content) then return end
 
-		if not ok then
-			local template = [[{
- "cells": [],
- "metadata": {},
- "nbformat": 4,
- "nbformat_minor": 5
-}
-]]
-			local out = io.open(path, "w")
-			if out then
-				out:write(template)
-				out:close()
-			end
-		end
-	end,
+    local out = io.open(args.match, "w")
+    if out then
+      out:write('{\n "cells": [],\n "metadata": {},\n "nbformat": 4,\n "nbformat_minor": 5\n}\n')
+      out:close()
+    end
+  end,
 })

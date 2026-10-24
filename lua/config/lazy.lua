@@ -1,10 +1,11 @@
+local uv = vim.uv or vim.loop
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
+
+if not uv.fs_stat(lazypath) then
   local out = vim.fn.system({
     "git", "clone", "--filter=blob:none",
     "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable",
-    lazypath,
+    "--branch=stable", lazypath,
   })
   if vim.v.shell_error ~= 0 then
     vim.api.nvim_echo({
@@ -17,11 +18,16 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-vim.g.mapleader = " "
-vim.g.maplocalleader = "\\"
-
 require("lazy").setup({
-	spec = {
-		{ import = "plugins" },
-	},
+  spec = {
+    { import = "plugins.core" },
+    { import = "plugins.git" },
+    { import = "plugins.ui" },
+    { import = "plugins.files" },
+    { import = "plugins.dev" },
+  },
+  concurrency = 2,                  -- fewer parallel clones = fewer dropped connections
+  git = { timeout = 600 },          -- default 120s is what killed gitsigns/lspconfig
+  checker = { enabled = false },
+  change_detection = { notify = false },
 })
