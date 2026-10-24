@@ -13,6 +13,7 @@ return {
 	},
 	{
 		"HiPhish/rainbow-delimiters.nvim",
+		submodules = false, -- its submodules are test-only and live on gitlab.com
 		event = { "BufReadPost", "BufNewFile" },
 		config = function()
 			require("rainbow-delimiters.setup").setup({

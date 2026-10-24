@@ -28,6 +28,8 @@ require("lazy").setup({
   },
   concurrency = 2,                  -- fewer parallel clones = fewer dropped connections
   git = { timeout = 600 },          -- default 120s is what killed gitsigns/lspconfig
+  install = { colorscheme = { "habamax" } }, -- used only while the first install runs
+  rocks = { enabled = false },               -- no luarocks needed, so no errors on fresh systems
   checker = { enabled = false },
   change_detection = { notify = false },
 })

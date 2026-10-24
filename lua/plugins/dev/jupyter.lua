@@ -1,7 +1,16 @@
+local env = require("config.env")
+
+-- Opt-in: needs python + pynvim + jupyter_client and a kitty-compatible terminal.
+-- Enable with `vim.g.enable_jupyter = true` in lua/config/local.lua (or NVIM_JUPYTER=1).
+if not env.optional("jupyter") or env.is_termux then
+  return {}
+end
+
 return {
   {
     "3rd/image.nvim",
     cond = not vim.g.vscode,
+    build = false, -- skip the luarocks build; the magick_cli processor needs no rock
     opts = {
       backend = "kitty", -- or "ueberzug" if your terminal isn't kitty-compatible
       processor = "magick_cli", -- needs ImageMagick installed, no luarock required

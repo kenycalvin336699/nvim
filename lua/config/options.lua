@@ -15,8 +15,14 @@ vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.opt.updatetime = 250
 
--- Only use this Python if it exists (needed by molten/jupyter)
-local py = "/mount/storage/llm-fcc/cuda/bin/python"
-if (vim.uv or vim.loop).fs_stat(py) then
-  vim.g.python3_host_prog = py
+-- No perl/ruby plugins here, so skip those providers (keeps :checkhealth quiet)
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_ruby_provider = 0
+
+-- Python for molten/jupyter: NVIM_PYTHON env var, or set it in config/local.lua
+if vim.env.NVIM_PYTHON and vim.env.NVIM_PYTHON ~= "" then
+  vim.g.python3_host_prog = vim.env.NVIM_PYTHON
 end
+
+-- Personal overrides (gitignored, optional)
+pcall(require, "config.local")

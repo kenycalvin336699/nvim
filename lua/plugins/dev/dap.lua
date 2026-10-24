@@ -1,15 +1,26 @@
-local mason_bin = vim.fn.stdpath("data") .. "/mason/bin/"
+local env = require("config.env")
 local uv = vim.uv or vim.loop
+local unity = env.optional("unity")
 
-return {
+-- prefer a Mason-installed binary, otherwise whatever is on PATH
+local function bin(name)
+  local p = vim.fn.stdpath("data") .. "/mason/bin/" .. name
+  return uv.fs_stat(p) and p or name
+end
+
+local dap_deps = {
+  "rcarriga/nvim-dap-ui",
+  "nvim-neotest/nvim-nio",
+  "theHamsta/nvim-dap-virtual-text",
+}
+if env.use_mason then table.insert(dap_deps, "jay-babu/mason-nvim-dap.nvim") end
+
+local specs
+
+specs = {
   {
     "mfussenegger/nvim-dap",
-    dependencies = {
-      "rcarriga/nvim-dap-ui",
-      "nvim-neotest/nvim-nio",
-      "jay-babu/mason-nvim-dap.nvim",
-      "theHamsta/nvim-dap-virtual-text",
-    },
+    dependencies = dap_deps,
     keys = {
       { "<F5>",       function() require("dap").continue() end,          desc = "Debug: Continue" },
       { "<F10>",      function() require("dap").step_over() end,         desc = "Debug: Step Over" },
@@ -41,11 +52,16 @@ return {
 
       -- ===== C / C++ / Rust via codelldb =====
       dap.adapters.codelldb = function(callback)
+        local exe = bin("codelldb")
+        if vim.fn.executable(exe) ~= 1 then
+          vim.notify("codelldb not found (install it with :MasonInstall codelldb)", vim.log.levels.WARN)
+          return
+        end
         local port = 13000 + math.random(0, 500) -- avoid clashing with a leftover process
         local stdout = uv.new_pipe(false)
         local handle
 
-        handle = uv.spawn(mason_bin .. "codelldb", {
+        handle = uv.spawn(exe, {
           args = { "--port", tostring(port) },
           stdio = { nil, stdout, nil },
           detached = true,
@@ -97,7 +113,7 @@ return {
       -- ===== C# / Unity via netcoredbg =====
       dap.adapters.coreclr = {
         type = "executable",
-        command = mason_bin .. "netcoredbg",
+        command = bin("netcoredbg"),
         args = { "--interpreter=vscode" },
       }
       dap.configurations.cs = {
@@ -111,16 +127,21 @@ return {
     end,
   },
 
-  {
+}
+
+if env.use_mason then
+  table.insert(specs, {
     "jay-babu/mason-nvim-dap.nvim",
     dependencies = { "mason-org/mason.nvim", "mfussenegger/nvim-dap" },
     opts = {
-      ensure_installed = { "codelldb", "netcoredbg" },
+      ensure_installed = unity and { "codelldb", "netcoredbg" } or { "codelldb" },
       handlers = {
         -- we register codelldb ourselves above to avoid the port-race
         -- in mason-nvim-dap's built-in adapter
         codelldb = function() end,
       },
     },
-  },
-}
+  })
+end
+
+return specs

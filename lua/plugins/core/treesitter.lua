@@ -1,14 +1,20 @@
+local env = require("config.env")
+
+-- main-branch nvim-treesitter compiles parsers, so it needs the tree-sitter CLI and a C compiler
+local can_compile = env.has("tree-sitter") and (env.has("cc") or env.has("gcc") or env.has("clang"))
+
 return {
   "nvim-treesitter/nvim-treesitter",
   branch = "main",
   lazy = false, -- this branch does not support lazy-loading
-  build = ":TSUpdate",
+  build = can_compile and ":TSUpdate" or nil,
   config = function()
-    require("nvim-treesitter").setup({})
+    local ts = require("nvim-treesitter")
+    ts.setup({})
 
-    require("nvim-treesitter").install({
-      "c", "rust", "asm", "html", "css", "java", "c_sharp", "lua", "vim", "vimdoc",
-    })
+    if can_compile then
+      ts.install({ "c", "rust", "asm", "html", "css", "java", "c_sharp", "lua", "vim", "vimdoc" })
+    end
 
     vim.api.nvim_create_autocmd("FileType", {
       group = vim.api.nvim_create_augroup("user-treesitter", { clear = true }),
